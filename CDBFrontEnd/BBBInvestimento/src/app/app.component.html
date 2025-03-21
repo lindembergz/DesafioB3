@@ -1,0 +1,26 @@
+<div class="container">
+  <h2>Simulador de CDB</h2>
+
+  <div *ngIf="erro" class="erro">{{ erro }}</div>
+  <p></p>
+
+  <label>Valor Inicial:</label>
+  <input type="number" [(ngModel)]="valorInicial" placeholder="Digite o valor inicial">
+
+  <p></p>
+  <label>Quantidade de Meses:</label>
+  <input type="number" [(ngModel)]="quantidadeMeses" placeholder="Digite os meses">
+
+  <p></p>
+  <button (click)="calcularInvestimento()">Calcular</button>
+
+  <div *ngIf="valorBruto !== undefined">
+    <h3>Resultado</h3>
+    <p><strong>Valor Bruto:</strong> R$ {{ valorBruto | number:'1.2-2' }}</p>
+    <p><strong>Valor Líquido:</strong> R$ {{ valorLiquido | number:'1.2-2' }}</p>
+  </div>
+</div>
+
+
+
+<router-outlet />
