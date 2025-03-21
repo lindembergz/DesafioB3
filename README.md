@@ -61,19 +61,6 @@ A solução está organizada em uma arquitetura em camadas:
    - Estará disponível no menu Exibir -> Outras Janelas -> Fine Code Coverage
    - Execute os testes para observar as métricas
 
-
-### Testes do Frontend (Angular)
-
-## Parâmetros do Cálculo
-
-- **Taxa do CDI**: 0,9% ao mês (fixo)
-- **Taxa do Banco (TB)**: 108% do CDI (fixo)
-- **Imposto de Renda sobre o rendimento**:
-  - Até 6 meses: 22,5%
-  - Até 12 meses: 20%
-  - Até 24 meses: 17,5%
-  - Acima de 24 meses: 15%
-
 ## Notas Técnicas
 
 - A API implementa validações para garantir dados de entrada válidos
