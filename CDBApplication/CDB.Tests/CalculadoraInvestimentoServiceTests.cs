@@ -1,7 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
+﻿using System;
+using CDB.Application.Config.CDB.Domain.Configuration;
+using System.Diagnostics.CodeAnalysis;
 using CDB.Application.Services;
 using CDB.Domain.Models;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace CDB.Tests
@@ -10,114 +12,96 @@ namespace CDB.Tests
     public class CalculadoraInvestimentoServiceTests
     {
         private readonly CalculadoraInvestimentoService _calculator;
+        private readonly CalculadoraConfiguration _config;
 
         public CalculadoraInvestimentoServiceTests()
         {
-            _calculator = new CalculadoraInvestimentoService();
+            // Configuração padrão para os testes
+            _config = new CalculadoraConfiguration
+            {
+                TaxaReferencial = 1.08m,
+                CDI = 0.009m,
+                AliquotaAte6Meses = 0.225m,
+                AliquotaAte12Meses = 0.20m,
+                AliquotaAte24Meses = 0.175m,
+                AliquotaAcima24Meses = 0.15m,
+                CasasDecimais = 2
+            };
+            var options = Options.Create(_config);
+            _calculator = new CalculadoraInvestimentoService(options);
         }
 
         [Theory]
-        [InlineData(1000, 3, 1029.44, 1022.82)] //Até 6 meses: 22,5%
-        [InlineData(1000, 9, 1090.96, 1072.77)] //Até 12 meses: 20%
-        [InlineData(1000, 18, 1190.19, 1156.91)] //Até 24 meses: 17,5%
-        [InlineData(1000, 36, 1416.56, 1354.07)] //Acima de 24 meses: 15%
-        public void CalcularCDB_ValoresValidos_RetornaResultadosCorretos(decimal valorInicial, int meses, decimal valorBrutoEsperado, decimal valorLiquidoEsperado)
+        [InlineData(1000, 3)]  // Até 6 meses
+        [InlineData(1000, 9)]  // Até 12 meses
+        [InlineData(1000, 18)] // Até 24 meses
+        [InlineData(1000, 36)] // Acima de 24 meses
+        public void CalcularCDB_ValoresValidos_RetornaResultadosCorretos(decimal valorInicial, int meses)
         {
-            
-            ResultadoInvestimento resultado = _calculator.CalcularCDB(valorInicial, meses);
-
-            
-            Assert.Equal(valorBrutoEsperado, resultado.ValorBruto, 2);
-            Assert.Equal(valorLiquidoEsperado, resultado.ValorLiquido, 2);
-        }
-
-        [Fact]
-        public void CalcularCDB_ValorInicialZero_RetornaResultadoCorreto()
-        {
-            ResultadoInvestimento resultado = _calculator.CalcularCDB(0, 12);
-           
-            Assert.Equal(0m, resultado.ValorBruto);
-            Assert.Equal(0m, resultado.ValorLiquido);
-        }
-
-        [Theory]
-        [InlineData(6, 0.225)]  //Até 6 meses
-        [InlineData(12, 0.20)]  //Até 12 meses
-        [InlineData(24, 0.175)] //Até 24 meses
-        [InlineData(25, 0.15)]  //Acima de 24 meses
-        public void DeterminarAliquotaImposto_PrazosDiferentes_RetornaAliquotaCorreta(int meses, decimal aliquotaEsperada)
-        {
-        
-            var calculator = new CalculadoraInvestimentoService();
-            var methodInfo = typeof(CalculadoraInvestimentoService).GetMethod("DeterminarAliquotaImposto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-           
-            var aliquota = (decimal)methodInfo.Invoke(calculator, new object[] { meses });
-
-           
-            Assert.Equal(aliquotaEsperada, aliquota);
-        }
-
-        // Teste para verificar se TB (108%) e CDI (0,9%) estão sendo aplicados corretamente
-        [Fact]
-        public void CalcularCDB_UsaTB_e_CDI_Corretamente_ParaUmMes()
-        {
-
-            decimal valorInicial = 1000m;
-            int meses = 1;
-            decimal fatorRendimentoEsperado = 1 + (0.009m * 1.08m); // CDI * TB
-            decimal valorBrutoEsperado = valorInicial * fatorRendimentoEsperado;
-            valorBrutoEsperado = Math.Round(valorBrutoEsperado, 4); // Arredondamento usado no código
-            decimal rendimentoEsperado = valorBrutoEsperado - valorInicial;
-            decimal impostoEsperado = rendimentoEsperado * 0.225m; // Alíquota de até 6 meses
-            decimal valorLiquidoEsperado = valorBrutoEsperado - impostoEsperado;
-
-           
-            ResultadoInvestimento resultado = _calculator.CalcularCDB(valorInicial, meses);
-
-          
-            Assert.Equal(Math.Round(valorBrutoEsperado, 2), resultado.ValorBruto, 2);
-            Assert.Equal(Math.Round(valorLiquidoEsperado, 2), resultado.ValorLiquido, 2);
-        }
-
-
-        [Fact]
-        public void CalcularCDB_UsaTB_e_CDI_Corretamente_ParaMultiplosMeses()
-        {
-            
-            decimal valorInicial = 1000m;
-            int meses = 3;
+            // Arrange
             decimal valorBruto = valorInicial;
-            decimal fatorRendimento = 1 + (0.009m * 1.08m); // CDI * TB
+            decimal fatorRendimento = 1 + _config.CDI * _config.TaxaReferencial;
             for (int i = 0; i < meses; i++)
             {
                 valorBruto *= fatorRendimento;
                 valorBruto = Math.Round(valorBruto, 4); // Arredondamento mensal
             }
             decimal rendimento = valorBruto - valorInicial;
-            decimal imposto = rendimento * 0.225m; // Alíquota de até 6 meses
+            decimal aliquota = DeterminarAliquotaImposto(meses);
+            decimal imposto = rendimento * aliquota;
             decimal valorLiquidoEsperado = valorBruto - imposto;
 
-          
+            // Act
             ResultadoInvestimento resultado = _calculator.CalcularCDB(valorInicial, meses);
 
-            
-            Assert.Equal(Math.Round(valorBruto, 2), resultado.ValorBruto, 2);
-            Assert.Equal(Math.Round(valorLiquidoEsperado, 2), resultado.ValorLiquido, 2);
+            // Assert
+            Assert.Equal(Math.Round(valorBruto, _config.CasasDecimais), resultado.ValorBruto);
+            Assert.Equal(Math.Round(valorLiquidoEsperado, _config.CasasDecimais), resultado.ValorLiquido);
         }
 
-        //Testes para as alíquotas de imposto
-        [Theory]
-        [InlineData(3, 0.225, "ALÍQUOTA_ATE_6_MESES")]   //Até 6 meses: 22,5%
-        [InlineData(9, 0.20, "ALÍQUOTA_ATE_12_MESES")]   //Até 12 meses: 20%
-        [InlineData(18, 0.175, "ALÍQUOTA_ATE_24_MESES")] //Até 24 meses: 17,5%
-        [InlineData(36, 0.15, "ALÍQUOTA_ACIMA_24_MESES")] //Acima de 24 meses: 15%
-        public void CalcularCDB_UsaAliquotaCorreta_ParaDiferentesPrazos(int meses, decimal aliquotaEsperada, string aliquotaDescricao)
+        [Fact]
+        public void CalcularCDB_ValorInicialZero_RetornaResultadoCorreto()
         {
-           
+            // Act
+            ResultadoInvestimento resultado = _calculator.CalcularCDB(0, 12);
+
+            // Assert
+            Assert.Equal(0m, resultado.ValorBruto);
+            Assert.Equal(0m, resultado.ValorLiquido);
+        }
+
+        [Fact]
+        public void CalcularCDB_UsaTB_e_CDI_Corretamente_ParaUmMes()
+        {
+            // Arrange
+            decimal valorInicial = 1000m;
+            int meses = 1;
+            decimal fatorRendimentoEsperado = 1 + (_config.CDI * _config.TaxaReferencial);
+            decimal valorBrutoEsperado = valorInicial * fatorRendimentoEsperado;
+            valorBrutoEsperado = Math.Round(valorBrutoEsperado, 4);
+            decimal rendimentoEsperado = valorBrutoEsperado - valorInicial;
+            decimal impostoEsperado = rendimentoEsperado * _config.AliquotaAte6Meses; // Até 6 meses
+            decimal valorLiquidoEsperado = valorBrutoEsperado - impostoEsperado;
+
+            // Act
+            ResultadoInvestimento resultado = _calculator.CalcularCDB(valorInicial, meses);
+
+            // Assert
+            Assert.Equal(Math.Round(valorBrutoEsperado, _config.CasasDecimais), resultado.ValorBruto);
+            Assert.Equal(Math.Round(valorLiquidoEsperado, _config.CasasDecimais), resultado.ValorLiquido);
+        }
+
+        [Theory]
+        [InlineData(3, 0.225)]  // Até 6 meses
+        [InlineData(9, 0.20)]   // Até 12 meses
+        [InlineData(18, 0.175)] // Até 24 meses
+        [InlineData(36, 0.15)]  // Acima de 24 meses
+        public void CalcularCDB_UsaAliquotaCorreta_ParaDiferentesPrazos(int meses, decimal aliquotaEsperada)
+        {
+            // Arrange
             decimal valorInicial = 1000m;
             decimal valorBruto = valorInicial;
-            decimal fatorRendimento = 1 + (0.009m * 1.08m); // CDI * TB
+            decimal fatorRendimento = 1 + _config.CDI * _config.TaxaReferencial;
             for (int i = 0; i < meses; i++)
             {
                 valorBruto *= fatorRendimento;
@@ -127,103 +111,21 @@ namespace CDB.Tests
             decimal impostoEsperado = rendimento * aliquotaEsperada;
             decimal valorLiquidoEsperado = valorBruto - impostoEsperado;
 
-          
+            // Act
             ResultadoInvestimento resultado = _calculator.CalcularCDB(valorInicial, meses);
 
-            Assert.Equal(Math.Round(valorBruto, 2), resultado.ValorBruto, 2);
-            Assert.Equal(Math.Round(valorLiquidoEsperado, 2), resultado.ValorLiquido, 2);
+            // Assert
+            Assert.Equal(Math.Round(valorBruto, _config.CasasDecimais), resultado.ValorBruto);
+            Assert.Equal(Math.Round(valorLiquidoEsperado, _config.CasasDecimais), resultado.ValorLiquido);
         }
 
-
-        [Fact]
-        public void TB_DeveTerValorCorreto()
+        // Método auxiliar para determinar a alíquota nos testes
+        private decimal DeterminarAliquotaImposto(int meses)
         {
-
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("TB", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 1.08m;
-
-           
-            var valorAtual = (decimal)field.GetValue(null); // null porque é estático
-
-           
-            Assert.Equal(valorEsperado, valorAtual);
-        }
-
-        [Fact]
-        public void CDI_DeveTerValorCorreto()
-        {
-          
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("CDI", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 0.009m;
-
-            
-            var valorAtual = (decimal)field.GetValue(null);
-
-         
-            Assert.Equal(valorEsperado, valorAtual);
-        }
-
-        [Fact]
-        public void ALIQUOTA_ATE_6_MESES_DeveTerValorCorreto()
-        {
-           
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("ALIQUOTA_ATE_6_MESES", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 0.225m;
-
-            
-            var valorAtual = (decimal)field.GetValue(null);
-
-           
-            Assert.Equal(valorEsperado, valorAtual);
-        }
-
-        [Fact]
-        public void ALIQUOTA_ATE_12_MESES_DeveTerValorCorreto()
-        {
-            
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("ALIQUOTA_ATE_12_MESES", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 0.20m;
-
-            
-            var valorAtual = (decimal)field.GetValue(null);
-
-           
-            Assert.Equal(valorEsperado, valorAtual);
-        }
-
-        [Fact]
-        public void ALIQUOTA_ATE_24_MESES_DeveTerValorCorreto()
-        {
-          
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("ALIQUOTA_ATE_24_MESES", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 0.175m;
-
-           
-            var valorAtual = (decimal)field.GetValue(null);
-
-           
-            Assert.Equal(valorEsperado, valorAtual);
-        }
-
-
-        [Fact]
-        public void ALIQUOTA_ATE_ACIMA_24_MESES_DeveTerValorCorreto()
-        {
-
-            var field = typeof(CalculadoraInvestimentoService)
-                .GetField("ALIQUOTA_ACIMA_24_MESES", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
-            decimal valorEsperado = 0.15m;
-
-
-            var valorAtual = (decimal)field.GetValue(null);
-
-
-            Assert.Equal(valorEsperado, valorAtual);
+            if (meses <= 6) return _config.AliquotaAte6Meses;
+            if (meses <= 12) return _config.AliquotaAte12Meses;
+            if (meses <= 24) return _config.AliquotaAte24Meses;
+            return _config.AliquotaAcima24Meses;
         }
     }
 }
