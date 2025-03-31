@@ -1,24 +1,22 @@
 ﻿using System;
+using CDB.Application.Config;
+using CDB.Application.Config.CDB.Domain.Configuration;
 using CDB.Domain.Interfaces;
 using CDB.Domain.Models;
+using Microsoft.Extensions.Options;
 
 namespace CDB.Application.Services
 {
     public class CalculadoraInvestimentoService : ICalculadoraInvestimento
     {
-        private const decimal TB = 1.08m;//108% convertida para o formato decimal     
-        private const decimal CDI = 0.009m;//0,9% 
-
-        private const decimal ALIQUOTA_ATE_6_MESES = 0.225m;//22,5%
-        private const decimal ALIQUOTA_ATE_12_MESES = 0.20m;//20%
-        private const decimal ALIQUOTA_ATE_24_MESES = 0.175m;//17,5% 
-        private const decimal ALIQUOTA_ACIMA_24_MESES = 0.15m;//15% 
-
+        private readonly CalculadoraConfiguration _config;
         private const int LIMITE_6_MESES = 6;
         private const int LIMITE_12_MESES = 12;
         private const int LIMITE_24_MESES = 24;
-
-        private const int casasDecimais = 2;
+        public CalculadoraInvestimentoService(IOptions<CalculadoraConfiguration> config)
+        {
+            _config = config.Value ?? throw new ArgumentNullException(nameof(config));
+        }
 
         public ResultadoInvestimento CalcularCDB(decimal valorInicial, int quantidadeMeses)
         {
@@ -27,7 +25,7 @@ namespace CDB.Application.Services
             for (int i = 0; i < quantidadeMeses; i++)
             {
                 //Calcula o rendimento mensal com maior precisão
-                decimal fatorRendimento = 1 + CDI * TB;
+                decimal fatorRendimento = 1 + _config.CDI * _config.TaxaReferencial;
 
                 //Aplica o rendimento ao valor bruto
                 valorBruto *= fatorRendimento;
@@ -46,18 +44,23 @@ namespace CDB.Application.Services
 
             return new ResultadoInvestimento
             {
-                ValorBruto = Math.Round(valorBruto, casasDecimais),
-                ValorLiquido = Math.Round(valorLiquido, casasDecimais)
+                ValorBruto = Math.Round(valorBruto, _config.CasasDecimais),
+                ValorLiquido = Math.Round(valorLiquido, _config.CasasDecimais)
             };
         }
 
-        private decimal DeterminarAliquotaImposto(int quantidadeMeses) =>
-                  quantidadeMeses switch
-                  {
-                      <= LIMITE_6_MESES => ALIQUOTA_ATE_6_MESES,
-                      <= LIMITE_12_MESES => ALIQUOTA_ATE_12_MESES,
-                      <= LIMITE_24_MESES => ALIQUOTA_ATE_24_MESES,
-                      _ => ALIQUOTA_ACIMA_24_MESES
-                  };
-    }
+        private decimal DeterminarAliquotaImposto(int quantidadeMeses)
+        {
+            return quantidadeMeses switch
+            {
+                <= LIMITE_6_MESES => _config.AliquotaAte6Meses,
+                <= LIMITE_12_MESES => _config.AliquotaAte12Meses,
+                <= LIMITE_24_MESES => _config.AliquotaAte24Meses,
+                _ => _config.AliquotaAcima24Meses
+            };
+        }
+
+
+    };
 }
+

@@ -15,16 +15,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular",
-        policy => policy.WithOrigins("http://localhost:4200") // URL da aplicação Angular
+        policy => policy.WithOrigins("http://localhost:4200") 
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
 
-InjecaoDependencia.ConfigurarDependencias(builder.Services);
+InjecaoDependencia.ConfigurarDependencias(builder.Services, builder.Configuration);
 
 var app = builder.Build();
 
-//Captura exceções não tratadas em qualquer parte da aplicação.
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>

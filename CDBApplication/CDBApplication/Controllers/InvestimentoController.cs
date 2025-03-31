@@ -26,6 +26,12 @@ namespace CDB.API.Controllers
         [HttpPost("calcular-cdb")]
         public ActionResult<ResultadoInvestimentoDTO> CalculateCDB(EntradaInvestimentoDTO input)
         {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             string mensagemErro;
             if (!_validator.ValidarEntrada(input, out mensagemErro))
             {
