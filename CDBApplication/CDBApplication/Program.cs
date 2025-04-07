@@ -16,7 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular",
-        policy => policy.WithOrigins("http://localhost:4200") 
+        policy => policy.AllowAnyOrigin()
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
@@ -24,6 +24,8 @@ builder.Services.AddCors(options =>
 InjecaoDependencia.ConfigurarDependencias(builder.Services, builder.Configuration);
 
 var app = builder.Build();
+
+app.UseCors("AllowAngular");
 
 app.UseExceptionHandler(errorApp =>
 {
