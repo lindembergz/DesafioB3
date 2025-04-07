@@ -16,7 +16,7 @@ interface ResultadoInvestimentoDTO {
   providedIn: 'root'
 })
 export class InvestimentoService {
-  private apiUrl = 'http://localhost:5189/api/investimento/calcular-cdb';
+  private apiUrl = 'http://3.89.96.62:5000/api/investimento/calcular-cdb';
 
   constructor(private http: HttpClient) { }
 
