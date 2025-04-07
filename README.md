@@ -2,6 +2,10 @@
 
 Esta solução implementa uma calculadora de investimentos em CDB (Certificado de Depósito Bancário), composta por uma API em .NET e uma interface web em Angular.
 
+
+![image](https://github.com/user-attachments/assets/e2f97f53-e709-4892-a9e7-243500b5533d)
+
+
 ## Estrutura da Solução
 
 A solução está organizada em uma arquitetura em camadas:
