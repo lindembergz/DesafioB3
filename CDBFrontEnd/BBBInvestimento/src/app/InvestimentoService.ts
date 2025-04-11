@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
+
 
 interface EntradaInvestimentoDTO {
   valorInicial: number;
@@ -16,7 +18,8 @@ interface ResultadoInvestimentoDTO {
   providedIn: 'root'
 })
 export class InvestimentoService {
-  private apiUrl = 'http://54.237.162.33:5000/api/investimento/calcular-cdb';
+
+  private apiUrl = `${environment.apiUrl}/investimento/calcular-cdb`;
 
   constructor(private http: HttpClient) { }
 
