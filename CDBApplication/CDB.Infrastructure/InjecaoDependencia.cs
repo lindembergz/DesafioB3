@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using CDB.Domain.Interfaces;
 using CDB.Application.Validation;
 using CDB.Application.Services;
-using CDB.Application.Config.CDB.Domain.Configuration;
+using CDB.Application.Config;
 
 namespace CalculadoraCDB.Infraestrutura
 {

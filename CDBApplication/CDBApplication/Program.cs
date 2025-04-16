@@ -1,5 +1,6 @@
 
 using System.Reflection;
+using System.Text.Json;
 using CalculadoraCDB.Infraestrutura;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,7 +38,9 @@ app.UseExceptionHandler(errorApp =>
         {
             logger.LogError(exception, "Erro não tratado na aplicação.");
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsync("Ocorreu um erro ao processar a solicitação. Por favor, tente novamente.");
+            context.Response.ContentType = "application/json";
+            var result = JsonSerializer.Serialize(new { error = "Ocorreu um erro ao processar a solicitação. Por favor, tente novamente." });
+            await context.Response.WriteAsync(result);
         }
     });
 });
@@ -51,6 +54,5 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAngular");
 
 app.MapControllers();
-
 
 app.Run();

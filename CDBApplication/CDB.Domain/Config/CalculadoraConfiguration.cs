@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace CDB.Application.Config
 {
-    using System;
-
-    namespace CDB.Domain.Configuration
-    {
         /// <summary>
         /// Configurações para a calculadora de investimentos CDB
         /// </summary>
@@ -54,5 +50,5 @@ namespace CDB.Application.Config
             public int CasasDecimais { get; set; }
         }
 
-     }
+
 }
