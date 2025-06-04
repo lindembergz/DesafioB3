@@ -1,0 +1,49 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main  # Or your default branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2 # It's good practice to use major version pinning
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1 # Replace with your desired AWS region
+
+      # Add your deployment steps here.
+      # For example, if deploying a static site to S3:
+      # - name: Deploy static site to S3
+      #   run: aws s3 sync ./CDBFrontEnd/BBBInvestimento/dist/ /your-s3-bucket-name/ --delete
+      #
+      # Or if deploying a .NET application to Elastic Beanstalk:
+      # - name: Set up .NET Core
+      #   uses: actions/setup-dotnet@v3
+      #   with:
+      #     dotnet-version: '6.0.x' # Replace with your .NET version
+      # - name: Publish .NET Application
+      #   run: dotnet publish ./CDBApplication/CDBApplication.sln --configuration Release --output ./publish
+      # - name: Deploy to Elastic Beanstalk
+      #   uses: einaregilsson/beanstalk-deploy@v21 # Or another EB deploy action
+      #   with:
+      #     aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     application_name: your-eb-app-name
+      #     environment_name: your-eb-env-name
+      #     version_label: ${{ github.sha }}
+      #     region: us-east-1 # Replace with your AWS region
+      #     deployment_package: ./publish/CDBApplication.zip # Adjust path and packaging as needed
+
+      - name: Placeholder for AWS Deployment
+        run: |
+          echo "AWS deployment steps go here."
+          echo "Please replace this placeholder with your actual deployment commands."
+          echo "For example, to deploy to S3, ECS, Lambda, Elastic Beanstalk, etc."
