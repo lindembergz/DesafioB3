@@ -72,3 +72,9 @@ A solução está organizada em uma arquitetura em camadas:
 - Os valores são calculados com precisão decimal para evitar erros de arredondamento
 - O cálculo é aplicado mês a mês, utilizando o rendimento acumulado
 - O imposto é aplicado apenas sobre o rendimento (diferença entre valor final e inicial)
+
+
+
+linkedIn : https://www.linkedin.com/in/lindemberg-cortez-a6ba42195/
+Email: lindemberg.cortez@gmail.com
+
